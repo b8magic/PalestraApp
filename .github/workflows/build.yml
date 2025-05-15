@@ -22,7 +22,7 @@ jobs:
             -configuration Debug \
             SWIFT_OPTIMIZATION_LEVEL=-Onone \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
-            archive -scheme "Monte Ore" \
+            archive -scheme "PALESTRA" \
             -destination 'generic/platform=iOS' \
             -archivePath ios_archive \
             -quiet
