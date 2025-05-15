@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: macos-15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Archive iOS app
+        run: |
+          xcodebuild \
+            -configuration Debug \
+            SWIFT_OPTIMIZATION_LEVEL=-Onone \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
+            archive -scheme "Monte Ore" \
+            -destination 'generic/platform=iOS' \
+            -archivePath ios_archive \
+            -quiet
+
+      - name: "Debug: List App Bundle"
+        run: ls -al ios_archive.xcarchive/Products/Applications
+
+      - name: Ensure JPEG icons are included
+        run: |
+          ICON_SOURCE="MonteOre/Assets.xcassets/AppIcon.appiconset"
+          ICON_DEST_DIR="ios_archive.xcarchive/Products/Applications/Monte Ore.app/Assets.xcassets"
+          mkdir -p "$ICON_DEST_DIR"
+          APP_ICON_DEST="$ICON_DEST_DIR/AppIcon.appiconset"
+          if [ -d "$ICON_SOURCE" ]; then
+            echo "Copying JPEG icons from $ICON_SOURCE to $APP_ICON_DEST"
+            cp -R "$ICON_SOURCE" "$APP_ICON_DEST"
+          else
+            echo "Icon source folder $ICON_SOURCE does not exist. Skipping copy step."
+          fi
+
+      - name: Package iOS app
+        run: |
+          mv ios_archive.xcarchive/Products/Applications Payload
+          zip -yqr "Monte Ore.ipa" Payload
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: Monte Ore.ipa
